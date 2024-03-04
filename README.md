@@ -31,7 +31,7 @@ Ce serait bien de proposer un canevas pour Enable et Execute, qui seront vus ou 
 Dans le cadre de ce travail pratique, nous utilisons un capteur à effet hall d'origine Schunk.
 
 <figure>
-    <img src="./img/MMS 22-IO-Link.webp"
+    <img src="./img/MMS 22-IO-Link.png"
          alt="Lost image : MMS 22-IO-Link">
     <figcaption>Schunk MMS 22-IO-Link</figcaption>
 </figure>
@@ -41,7 +41,7 @@ Dans le cadre de ce travail pratique, nous utilisons un capteur à effet hall d'
 # Gripper
 
 <figure>
-    <img src="./img/MGM-plus 40.webp"
+    <img src="./img/MGM-plus 40.png"
          alt="Lost image : MGM-plus 40.webp">
     <figcaption>Schunk MGM-plus 40</figcaption>
 </figure>
