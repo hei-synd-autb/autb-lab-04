@@ -32,7 +32,6 @@ Dans le cadre de ce travail pratique, nous utilisons un capteur à effet hall d'
 
 <figure>
     <img src="./img/MMS 22-IO-Link.png"
-         align="center"
          alt="Lost image : MMS 22-IO-Link">
     <figcaption>Schunk MMS 22-IO-Link</figcaption>
 </figure>
