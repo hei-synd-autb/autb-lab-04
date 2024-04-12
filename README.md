@@ -14,6 +14,41 @@ Author: [Cédric Lenoir](mailto:cedric.lenoir@hevs.ch)
 
 Dans ce travail, nous allons construire un gripper, ou pince.
 
+# Sensor
+Dans le cadre de ce travail pratique, nous utilisons un capteur à effet hall d'origine Schunk.
+
+<figure>
+    <img src="./img/MMS 22-IO-Link.png"
+         alt="Lost image : MMS 22-IO-Link">
+    <figcaption>Schunk MMS 22-IO-Link</figcaption>
+</figure>
+
+> Ce capteur utilise la technologie **IO-Link**. Il est utilisé pour déterminer la position d'ouverture d'un actioneur pneumatique.
+
+> Ce qui nous intéresse au niveau de la programmation PLC, c'est le format de donnée qu'il fournit.
+
+# Gripper
+
+<figure>
+    <img src="./img/MGM-plus 40.png"
+         alt="Lost image : MGM-plus 40.webp">
+    <figcaption>Schunk MGM-plus 40</figcaption>
+</figure>
+
+> Noter les deux vis en dessus du logo Schunk qui servent à maintenir le capteur.
+
+## Données techniques
+Pince pour petites pièces MPG-plus, Taille: 40, pneumatique
+
+|Intitulé                           |Valeurs|
+|-----------------------------------|-------------|
+|Course par doigt| 6 mm|
+|Force à la fermeture| 135 N|
+|Force à l'ouverture| 110 N|
+|Température ambiant maxi.          | 90 °C|
+
+> Ces données techniques concernent principalement la personne qui va gérer le hardware.
+
 Avec un système de programmation empirique on pourrait se dire que tout ce dont nous avons besoin pour un capteur, c'est une entrée analogique ou digitale, donc en fin de compte, un ``REAL`` ou un ``BOOL``.
 
 Dans la pratique, une simple entrée ou sortie sera entourée d'une logique qui permettra de la mettre en forme et de la valider. Afin d'éviter de réécrire la même logique pour chaque entrée et chaque sortie, nous allons encapsuler l'ensemble dans un bloc. Le Bloc fonctionnel.
@@ -82,248 +117,109 @@ Comme condition d'entrée, nous utilisons un timer pour générer un signal ``to
 
 Dès l'instant ou les zones transitoires sont traitées à l'aide du timer, il ne sera plus nécessaire de traiter ces zones dans la suite du code.
 
-> Vous testez ce FB.
+## Vous testez ce FB.
+Vous pouvez utiliser les variables suivantes pour lier les sorties de votre FB avec le HMI:
+```iecst
+stTestFbGripperHmi.gripperStateClosed := ...
+stTestFbGripperHmi.gripperStateOpen := ...
+stTestFbGripperHmi.gripperStatePartPresent := ...
+stTestFbGripperHmi.gripperStateError := ...
+stTestFbGripperHmi.gripperStateInOp := ...
+```
+
+## Intégrer le FB avec le code suivant: 
+
+```iecst
+(**************************************************************************
+    YOUR CODE HERE
+**************************************************************************)
+fbGripperState.Enable := (stPlcOpenFbs.bEnableRemote)        		OR
+                   		 (NOT stPlcOpenFbs.bEnableRemote 		AND 
+				   		  NOT (fbPackStates.state.Aborting OR
+                               fbPackStates.state.Aborted)); 
+fbGripperState(hw := GVL_Abox.uaAboxInterface.uaSchunk);
+
+```
+
+Cela signifie que si, par exemple on ouvre la porte, l'état de la machine sera en **Aborted** et cela désactivera le FB, par exemple pour supprimer l'erreur. Il suffira ensuite de faire un **Reset** pour passer dans l'état **Stopped** et le FB sera de nouveau activé.
 
 
 # Type Execute
 Nous allons créer deux FB de type Execute pour piloter le Gripper.
 **FB_OpenGripper** et **FB_CloseGripper**.
 
-# Sensor
-Dans le cadre de ce travail pratique, nous utilisons un capteur à effet hall d'origine Schunk.
-
+## Rappel
 <figure>
-    <img src="./img/MMS 22-IO-Link.png"
-         alt="Lost image : MMS 22-IO-Link">
-    <figcaption>Schunk MMS 22-IO-Link</figcaption>
+    <img src="./puml/ExecuteDoneBase/ExecuteDoneBase.svg"
+         alt="Lost image :ExecuteDoneBase">
+    <figcaption>Execute Done Base</figcaption>
 </figure>
 
-> Ce capteur utilise la technologie **IO-Link**. Il est utilisé pour déterminer la position d'ouverture d'un actioneur pneumatique.
+## Your job !
 
-> Ce qui nous intéresse au niveau de la programmation PLC, c'est le format de donnée qu'il fournit.
+Pour chacun des FB, utiliser en I/O:
+-	```hwSensor := UA_Schunk_mms;```
+-	```hwEV := UA_Festo;```
 
-# Gripper
+Utiliser un paramètre d'entrée
+``thClosedMin``, pour la valeur **min** à atteindre par le sensor pour que le Gripper soit considéré comme fermé dans **FB_CloseGripper**.
+``thOpenMax``, pour la valeur **max** à atteindre par le sensor pour que le Gripper soit considéré comme ouvert dans **FB_OpenGripper**.
 
-<figure>
-    <img src="./img/MGM-plus 40.png"
-         alt="Lost image : MGM-plus 40.webp">
-    <figcaption>Schunk MGM-plus 40</figcaption>
-</figure>
+Les autres entrées et sorties sont celles de base pour un FB de type Execute.
 
-> Noter les deux vis en dessus du logo Schunk qui servent à maintenir le capteur.
+Enfin, on ajouter un timer de 1[s] pour contrôler le temps de fermeture ou d'ouverture du gripper. En cas de dépassement du délai, on affichera une erreur.
 
-## Données techniques
-Pince pour petites pièces MPG-plus, Taille: 40, pneumatique
+> Par rapport au model de base présenté dans le cours, on ne tiens pas compte de l'execute sur flanc montant sur Init et InOp. Par contre, **on garde le trigger sur le flanc montant pour passer de Idle à Init**.
 
-|Intitulé                           |Valeurs|
-|-----------------------------------|-------------|
-|Course par doigt| 6 mm|
-|Force à la fermeture| 135 N|
-|Force à l'ouverture| 110 N|
-|Température ambiant maxi.          | 90 °C|
+> Ne pas oublier d'activer, ou pas, l'électrovanne.
 
-> Ces données techniques concernent principalement la personne qui va gérer le hardware.
+> Ne surtout pas utiliser de la logique combinatoire pour piloter l'électrovanne!
 
-# Control Module Gripper
-Nous allons contsruire un CM Control Module Gripper constitué de deux Function Blocks.
-
-Le premier pilote un actuateur, le deuxième pilote un contrôle.
-
-## Actuateur
-L'actuateur fonctionne selon le principe Execute. C'est à dire que la fonction est activée sur le flanc montant d'un signal Execute.
-
-Le module utilisé est relativement basique, mais dans son principe, il correspond à ce que l'on retrouvera dans un travail pratique utlérieur pour piloter une commande d'axe électrique composée de plusieurs régulateurs en cascade.
-
-## Sensor
-Ici aussi, le sensor est relativement basique, mais comme on l'a vu dans le travail pratique précédent, on peut rapidement augementer la complexité de la partie logicielle afin de rendre l'utilisation de ce capteur polyvalente. Ici, nous allons utiliser ce capteur non seulement pour définir si l'actuateur est ouvert ou fermé, mais aussi pour déterminer si une pièce a été saisie correctement.
-
-## hardware
+C'est à dire:
 ```iecst
+	hwEV.SetOut := (eExecuteDone = E_ExecuteDone.InOp); // Do not do like that !!!
 
-TYPE HW_GripperSchunk_typ :
-STRUCT
-	actuator	: UA_Festo;
-	sensor		: UA_Schunk_mms;
-END_STRUCT
-END_TYPE
-
+	// Do like that:
+	IF eExecuteDone = E_ExecuteDone.InOp THEN
+		hwEV.SetOut := TRUE;		// Or FALSE
+	END_IF
 ```
+La raison est la suivente: si l'on utilise de la logique combinatoire, un autre FB ne pourra plus modifier hwEV.SetOut tant que le FB est actif. Le but d'un type Execute est d'activer ou piloter une action une fois.
 
+> Par contre, ce que l'on peut aussi constater, c'est que ce FB, comme d'autres FB, restera dans un état interne indéterminé si il n'est pas appelé en continu, il pourrait pas exemple rester dans l'état E_ExecuteDone.InOp, ce qui empêcherait toute nouvelle commande Execute. C'est pour cette raison qu'il est important d'écrire une fois un FB correctement structuré.
 
-
-# Actuator
-Principe
-On veut utiliser le gripper pour saisir une pièce.
-Le gripper est activé manuellement depuis un HMI Prosys Monitor.
-On va utiliser le capteur du gripper pour détecter si la pièce est saisie correctement.
-Si la pièce est saisie correctement, on active un flag à destination du Robot.
-Si la pièce n'est pas considérée comme saisie correctement, on active un gripper.
-
-Il faut considérer que si le FB_Gripper est inséré dans un programme, la commande Pick, Execute, pourrait poser un problème pour débloquer le système car le flag est dépendant du programme.
-
-
-Il est donc nécessaire de prévoir un mode manuel ou recovery pour débloquer le système.
-
-
-# Titiller les étudiants.
-On peut ajouter ici, le cas de figure du Recovery, c'est à dire que si la pièce n'est pas prise correctement, comment va-t-on faire pour donner la possibilité de retirer manuellement la pièce défectueuse sans devoir couper l'alimentation en air de la machine.
-
-# Titiller suite
-Déterminer dans quel sens on va piloter le gripper selon différents cas de figure, normalement ouvert, normalement fermé.
-On en arrive à un gripper paramétrable qui permette de choisir le type d'activation.
-
-Un actuateur simple, le gripper.
-La capteur Schunk sera aussi utilisé.
-
-# CFG, Config
-On peut ajouter une structure config en ``VAR_IN_OUT`` qui permettra non seulement de paramétrer le gripper, mais aussi les limites du sensor via le HMI.
-
-# Les états
-On va imposer les états minimaux pour l'écriture de la machine d'état.
-
-## Execute State
-
-
-
-## Modèle Enable InOperation
-
-[Détail de EnableInOperation](E_EnableInOperation.md)
-
-## Modèle Execute Done
-
-[Détail de ExecuteDoneBase](E_ExecuteDoneBase.md)
-
-## Help
-
-**FUNCTION_BLOCK TP**
-
-Implements a pulse timer
+## Tester le FB
+On peut par exemple lier le FB au HMI en utilisant les variables suivantes: ``stTestFbGripperHmi.executeOpenDone`` et ``stTestFbGripperHmi.executeCloseDone``.
 
 ```iecst
-(* Example declaration *)
-TPInst : TP ;
+fbOpenGripper(hwEV := GVL_Abox.uaAboxInterface.uaSchunkGripper,
+	          hwSensor := GVL_Abox.uaAboxInterface.uaSchunk,
+			  Done => stTestFbGripperHmi.executeOpenDone);
 
-(* Example in ST *)
-TPInst(IN := VarBOOL1, PT:= T#5s);
-VarBOOL2 := TPInst.Q;
+fbCloseGripper(hwEV := GVL_Abox.uaAboxInterface.uaSchunkGripper,
+	          hwSensor := GVL_Abox.uaAboxInterface.uaSchunk,
+			  Done => stTestFbGripperHmi.executeCloseDone);
 ```
 
-<figure>
-    <img src="./puml/TpTimeDiagram/TpTimeDiagram.svg"
-         alt="Lost image :TpTimeDiagram.svg">
-    <figcaption>Pulse Timer diagram</figcaption>
-</figure>
+## Une fois que tout fonctionne
+On peut dans un premier temps activer le gripper en fonction de la machine d'état qui pilote l'axe X.
 
-|Scope  |Name |Type |Comment|
-|-------|-----|-----|-------|
-|Input	|IN	  |BOOL	|Rising edge starts the pulse timer and sets Q to TRUE|
-|Input	|PT	  |TIME	|Length of the pulse (high-signal)|
-|Output	|Q	  |BOOL	|Pulse signal, set to TRUE for PT milliseconds if EN has a rising edge|
-|Output	|ET	  |TIME	|Elapsed time since pulse timer started. It will then remain constant after PT is reached|
+```iecst
+fbOpenGripper.Execute := (stStateMachineInfo.eState = E_Execute.eMotionBackDone) OR 
+                         (eStarting = E_Starting.eMotionStartingDone);
+
+fbCloseGripper.Execute := (stStateMachineInfo.eState = E_Execute.eMotionFwdDone);
+```
+
+Finalement, on peut encore ajouter le code suivant pour empêcher les axes de bouger tant que gripper n'a pas terminé un mouvement.
+
+```iecst
+GripperIsOpen   := fbOpenGripper.Done;
+GripperIsClosed	:= fbCloseGripper.Done
+```
 
 # Quelques liens
 [IO-Link, site officiel](https://io-link.com)
+
 [IODDfinder](https://ioddfinder.io-link.com)
 
-
-# Solution (partial) for FUNCTION_BLOCK FB_CheckGripperState
-
-```iecst
-// Header
-(*
-	www.hevs.ch
-	Institut Systemes Industriels
-	Project: 	Projet No: PW_04
-	Author:		Cedric Lenoir
-	Date:		2024 March 4
-	
-	Summary:	Structure for the harware of CM Gripper
-*)
-FUNCTION_BLOCK FB_CheckGripperState
-VAR_INPUT
-	Enable				: BOOL;
-	// Position of sensor when gripper is closed : should be 1000, for exemple: 990
-	thClosed			: UINT;
-	// Position of sensor when gripper is open : should be 0, for example: 10
-	thOpen				: UINT;
-	// Position of sensor when closed with part present, should be 787, for example 750
-	thParlLowLimit		: UINT;
-	// Position of sensor when closed with part present, should be 787, for example 800
-	thPartHighLimit		: UINT;
-END_VAR
-VAR_IN_OUT
-	hwSensor			: UA_Schunk_mms;
-	hwActuator			: UA_Festo;
-END_VAR
-VAR_OUTPUT
-	InOperation			: BOOL;
-	Error				: BOOL;
-	ErrorID				: WORD;
-END_VAR
-VAR
-	eEnableInOperation	: E_EnableInOperation;
-	// Do not control while gripper state change
-	lockCheck			: TP;
-	lastActuatorValue	: BOOL;
-END_VAR
-VAR CONSTANT
-	// 
-	GripperNoError		: WORD := 16#0001;
-	GripperNotOpen		: WORD := 16#0002;
-END_VAR
-
-// Code
-
-(*
-	Principle:
-	If gripper active without part, value of sensor should be closed with value > 990
-	If gripper active with part, value should be 750 < value < 800
-	If gripper not active, value should be < 10
-	
-	The control does not cover all cases.
-*)
-
-(*
-	Input management, set gripper transition
-	That is, we give pt time to the gripper to go to stable position
-*)
-lockCheck(IN := hwActuator.SetOut <> lastActuatorValue,
-	      PT := T#500MS);
-lastActuatorValue := hwActuator.SetOut;
-
-CASE eEnableInOperation OF
-	    // Starting state of a function block
-	eEnableInOperation.STATE_IDLE :
-		ErrorID := GripperNoError;
-		IF Enable THEN
-			eEnableInOperation := E_EnableInOperation.STATE_INIT;
-		END_IF
-    // Initialization of the function block State
-    eEnableInOperation.STATE_INIT :
-		ErrorID := GripperNoError;
-		// Nothing to do in this state
-		IF NOT Enable THEN
-			eEnableInOperation := E_EnableInOperation.STATE_IDLE;
-		ELSE
-			eEnableInOperation := E_EnableInOperation.STATE_INOP;
-		END_IF
-    //  Working state of the function block
-    eEnableInOperation.STATE_INOP :
-		(*
-			Check in case of actuator not active
-			gripper should be open, sensor 0
-		*)
-		IF hwActuator.SetOut AND 
-           NOT lockCheck     AND
-		   NOT hwSensor.Value < thOpen THEN
-		   ErrorID := GripperNotOpen;
-		   eEnableInOperation := E_EnableInOperation.STATE_ERROR;
-		END_IF
-		
-		// To be completed and checked
-		
-    // State is active after an error occurs
-    eEnableInOperation.STATE_ERROR :
-		;
-END_CASE
-```

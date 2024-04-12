@@ -8,7 +8,6 @@ note left of Idle
     Error := FALSE
 end note
 
-Init --> Init : Execute↑
 Init --> Error : SetError
 Init --> InOp
 note left of Init
@@ -17,8 +16,6 @@ note left of Init
     Error := FALSE
 end note
 
-
-InOp --> Init : Execute↑
 InOp --> Done 
 InOp --> Error : SetError
 note right of InOp
