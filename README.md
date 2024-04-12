@@ -23,6 +23,9 @@ Comprendre le fonctionnement d'une machine d'état complexe.
 Comprendre et écrire un bloc fonctionnel de type Execue.
 Comprendre et écrire un bloc fonctionnel de type Enable.
 
+# HMI
+Utilisez le HMI de base pour visualier quelques valeurs.
+
 # Type Enable
 Nous allons utiliser le type Enable pour savoir si le gripper est ouvert ou fermé.
 
@@ -37,10 +40,12 @@ Nous allons utiliser le type Enable pour savoir si le gripper est ouvert ou ferm
 Use the folder Your Job in the project of the BaseInterfaceUA to create your ENUM, FB.
 
 ### FB name: 
-FB_GripperState
-Utiliser le type UA_Festo comme I/O hardware.
+**FB_GripperState**
+Utiliser le type **UA_Schunk_mms** comme I/O hardware.
 
-Utiliser quatre seuils, *threshold* en **entrée**:
+> Pensez à créer le FB en Structured Text.
+
+Utiliser quatre seuils, *threshold* en **entrée** avec un type correspondant à celui du Hardware:
 -	thOpen
 -	thClosed
 -	thPartMin
@@ -52,15 +57,17 @@ pour déterminer en fonction de la position du capteur, un des trois signaux de 
 -	IsClosed
 -	Partpresent
 
-Dans ce cas, on va intégrer une machine d'état intermédiaire dans l'état InOp du FB Enable. Attention, il est possible que l'état soit indéterminé, par exemple si la pression d'air est manquante, dans ce cas, le signal d'erreur doit être activé.
+Dans ce cas, on va intégrer une machine d'état intermédiaire dans l'état **InOp** du FB Enable. Attention, il est possible que l'état soit indéterminé, par exemple si la pression d'air est manquante, dans ce cas, le signal d'erreur doit être activé.
 
 -	Utilisez **E_InOperationBase** pour l'Enum de base.
 -	Utilisez **E_InOpGripper** pour l'Enum spécifique à ce FB.
 -	Initialisez vore machine d'état interne dans Idle.
 -	Vérifiez l'état du gripper dans Init et déterminer l'état de base de la machine interne de InOp avant de passer dans cet état.
 -	Ne pas oublier les deux sorties de base du FB de type Enable.
+-	Les sorties **IsOpen**, **IsClosed** et **PartPresent** ne peuvent être actives que quand la mchine d'état principale est en **InOp**.
 
-> Notez qu'il n'y a pas de transition pour l'état IsIdle, puisque la machine d'état interne est iniialisée dans Init.
+> Notez qu'il n'y a pas de transition pour l'état **IsIdle**, puisque la machine d'état interne est iniialisée dans Init.
+> L'état **IsIdle** dans InOp conduit à une **erreur**.
 
 <figure>
     <img src="./puml/EnableInOpBaseSubState/EnableInOpBaseSubState.svg"
@@ -68,9 +75,19 @@ Dans ce cas, on va intégrer une machine d'état intermédiaire dans l'état InO
     <figcaption>Enable In Operation Base with sub-states</figcaption>
 </figure>
 
+## Avant de traiter la machine d'état ``E_InOperationBase``
+Nous avons à considérer qu'**il ne faut pas générer une erreur **pendant que le gripper est en mouvement. Ne pas confondre un état transitoir avec le cas où l'alimentation en air est absente.
+
+Comme condition d'entrée, nous utilisons un timer pour générer un signal ``tonIdleCondition.Q ``basé sur les seuils, th*** et le signal du capteur.
+
+Dès l'instant ou les zones transitoires sont traitées à l'aide du timer, il ne sera plus nécessaire de traiter ces zones dans la suite du code.
+
 > Vous testez ce FB.
 
+
 # Type Execute
+Nous allons créer deux FB de type Execute pour piloter le Gripper.
+**FB_OpenGripper** et **FB_CloseGripper**.
 
 # Sensor
 Dans le cadre de ce travail pratique, nous utilisons un capteur à effet hall d'origine Schunk.
