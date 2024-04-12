@@ -18,14 +18,59 @@ Avec un système de programmation empirique on pourrait se dire que tout ce dont
 
 Dans la pratique, une simple entrée ou sortie sera entourée d'une logique qui permettra de la mettre en forme et de la valider. Afin d'éviter de réécrire la même logique pour chaque entrée et chaque sortie, nous allons encapsuler l'ensemble dans un bloc. Le Bloc fonctionnel.
 
-# Commentaires de rédaction.
-Il faudra voir à la fin de la rédaction si il faut "Splitter ce TP en Sensor et Actuator".
+# Objectif
+Comprendre le fonctionnement d'une machine d'état complexe.
+Comprendre et écrire un bloc fonctionnel de type Execue.
+Comprendre et écrire un bloc fonctionnel de type Enable.
 
-Encore à réfléchir, mais deux FB complets
+# Type Enable
+Nous allons utiliser le type Enable pour savoir si le gripper est ouvert ou fermé.
 
-Au pire, si robust programming n'est pas vu, on indique comment on fait et la théorie suivra la pratique.
+## State Machine
+<figure>
+    <img src="./puml/EnableInOpBase/EnableInOpBase.svg"
+         alt="Lost image :EnableInOpBase">
+    <figcaption>Enable In Operation Base</figcaption>
+</figure>
 
-Ce serait bien de proposer un canevas pour Enable et Execute, qui seront vus ou pas dans Robust Programming.
+## Your Job
+Use the folder Your Job in the project of the BaseInterfaceUA to create your ENUM, FB.
+
+### FB name: 
+FB_GripperState
+Utiliser le type UA_Festo comme I/O hardware.
+
+Utiliser quatre seuils, *threshold* en **entrée**:
+-	thOpen
+-	thClosed
+-	thPartMin
+-	thPartMax
+
+pour déterminer en fonction de la position du capteur, un des trois signaux de **sortie** suivants:
+
+-	IsOpen
+-	IsClosed
+-	Partpresent
+
+Dans ce cas, on va intégrer une machine d'état intermédiaire dans l'état InOp du FB Enable. Attention, il est possible que l'état soit indéterminé, par exemple si la pression d'air est manquante, dans ce cas, le signal d'erreur doit être activé.
+
+-	Utilisez **E_InOperationBase** pour l'Enum de base.
+-	Utilisez **E_InOpGripper** pour l'Enum spécifique à ce FB.
+-	Initialisez vore machine d'état interne dans Idle.
+-	Vérifiez l'état du gripper dans Init et déterminer l'état de base de la machine interne de InOp avant de passer dans cet état.
+-	Ne pas oublier les deux sorties de base du FB de type Enable.
+
+> Notez qu'il n'y a pas de transition pour l'état IsIdle, puisque la machine d'état interne est iniialisée dans Init.
+
+<figure>
+    <img src="./puml/EnableInOpBaseSubState/EnableInOpBaseSubState.svg"
+         alt="Lost image :EnableInOpBaseSubState">
+    <figcaption>Enable In Operation Base with sub-states</figcaption>
+</figure>
+
+> Vous testez ce FB.
+
+# Type Execute
 
 # Sensor
 Dans le cadre de ce travail pratique, nous utilisons un capteur à effet hall d'origine Schunk.
