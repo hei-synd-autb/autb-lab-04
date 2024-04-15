@@ -274,8 +274,8 @@ VAR
 	(**********************************************************************************************************************
     	YOUR VARIABLES HERE
 	**********************************************************************************************************************)
-	fbGripperState		   : FB_GripperState;
-	fbOpenGripper		   : FB_OpenGripper;
+    fbGripperState		   : FB_GripperState;
+    fbOpenGripper		   : FB_OpenGripper;
     fbCloseGripper	       : FB_CloseGripper;	
 ```
 
