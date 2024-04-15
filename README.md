@@ -12,7 +12,7 @@ Author: [Cédric Lenoir](mailto:cedric.lenoir@hevs.ch)
 
 # LAB 04 A function block for an actuator
 
-Dans ce travail, nous allons construire un gripper, ou pince.
+Dans ce travail, nous allons construire deux FBs de type **Execute**, **Open** & **Close** pour piloter une pince, *gripper* et surveiller un capteur à l'aide d'un FB de type **Enable**.
 
 # Sensor
 Dans le cadre de ce travail pratique, nous utilisons un capteur à effet hall d'origine Schunk.
@@ -54,9 +54,10 @@ Avec un système de programmation empirique on pourrait se dire que tout ce dont
 Dans la pratique, une simple entrée ou sortie sera entourée d'une logique qui permettra de la mettre en forme et de la valider. Afin d'éviter de réécrire la même logique pour chaque entrée et chaque sortie, nous allons encapsuler l'ensemble dans un bloc. Le Bloc fonctionnel.
 
 # Objectif
-Comprendre le fonctionnement d'une machine d'état complexe.
-Comprendre et écrire un bloc fonctionnel de type Execue.
-Comprendre et écrire un bloc fonctionnel de type Enable.
+-   Comprendre et écrire un bloc fonctionnel de type Execute.
+-   Comprendre et écrire un bloc fonctionnel de type Enable.
+
+> On peut commencer par l'un ou l'autre des FBs. Le type **Execute**, dans ce travail, est problablement un peu plus simple [pour commencer](#type-execute).
 
 # HMI
 Utilisez le HMI de base pour visualier quelques valeurs.
